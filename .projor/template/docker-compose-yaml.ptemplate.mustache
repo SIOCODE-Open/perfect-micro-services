@@ -1,0 +1,36 @@
+{
+    "map": {
+        "services": "micro-services"
+    },
+    "filename": "docker-compose.yaml"
+}
+---
+version: '3.8'
+services:
+{{#each services}}
+    {{kebabCase name}}:
+        build:
+            dockerfile: dockerfiles/{{kebabCase name}}-service.dockerfile
+            context: .
+        ports:
+            - "{{{defaultPort}}}:{{{defaultPort}}}"
+        networks:
+            - app
+        init: true
+{{/each}}
+    api-gateway:
+        image: envoyproxy/envoy:v1.31-latest
+        container_name: envoy
+        volumes:
+            - ./envoy.config.yaml:/etc/envoy/envoy.yaml
+        ports:
+            - "4000:4000"
+        command: /usr/local/bin/envoy -c /etc/envoy/envoy.yaml
+        depends_on:
+{{#each services}}
+            - {{kebabCase name}}
+{{/each}}
+        networks:
+            - app
+networks:
+    app: {}

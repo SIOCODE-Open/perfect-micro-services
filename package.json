@@ -1,0 +1,31 @@
+{
+    "name": "perfect-micro-services",
+    "version": "0.0.1",
+    "private": true,
+    "workspaces": ["packages/*"],
+    "dependencies": {
+        "express": "4.19.2",
+        "dotenv": "16.4.5"
+    },
+    "devDependencies": {
+        "@types/node": "22.5.4",
+        "@types/express": "4.17.21",
+        "@types/mocha": "10.0.7",
+        "esbuild": "0.23.1",
+        "typescript": "5.5.4",
+        "mocha": "10.7.3",
+        "chai": "5.1.1"
+    },
+    "scripts": {
+        "build:adder": "npm run -w adder-service build && npm run -w adder-service-client build",
+        "test:adder": "npm run -w adder-service-test start",
+        "build:subtractor": "npm run -w subtractor-service build && npm run -w subtractor-service-client build",
+        "test:subtractor": "npm run -w subtractor-service-test start",
+        "build:multiplier": "npm run -w multiplier-service build && npm run -w multiplier-service-client build",
+        "test:multiplier": "npm run -w multiplier-service-test start",
+        "build:divider": "npm run -w divider-service build && npm run -w divider-service-client build",
+        "test:divider": "npm run -w divider-service-test start",
+        "build": "npm run build:adder && npm run build:subtractor && npm run build:multiplier && npm run build:divider",
+        "test": "npm run test:adder && npm run test:subtractor && npm run test:multiplier && npm run test:divider"
+    }
+}

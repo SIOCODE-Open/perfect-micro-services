@@ -1,0 +1,8 @@
+id: BodyParameter
+name: Body Parameter
+description: A parameter in the request of response body for a micro-service.
+fields:
+  - name: type
+    description: The basic type of the parameter.
+    type: reference
+    references: BasicType

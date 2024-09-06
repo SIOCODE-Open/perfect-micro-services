@@ -1,0 +1,61 @@
+id: micro-services
+name: Micro Services
+description: The concrete micro-services in our project.
+schema: MicroService
+objects:
+  - name: adder
+    description: This micro-service adds two numbers together.
+    defaultPort: 3000
+    request:
+      - name: a
+        description: The first number
+        type: basic#number
+      - name: b
+        description: The second number
+        type: basic#number
+    response:
+      - name: result
+        description: The sum of the two numbers
+        type: basic#number
+  - name: subtractor
+    description: This micro-service subtracts one number from another.
+    defaultPort: 3001
+    request:
+      - name: a
+        description: The number to subtract from
+        type: basic#number
+      - name: b
+        description: The number to subtract
+        type: basic#number
+    response:
+      - name: result
+        description: The difference of the two numbers
+        type: basic#number
+  - name: multiplier
+    description: This micro-service multiplies two numbers together.
+    defaultPort: 3002
+    request:
+      - name: a
+        description: The first number
+        type: basic#number
+      - name: b
+        description: The second number
+        type: basic#number
+    response:
+      - name: result
+        description: The product of the two numbers
+        type: basic#number
+  - name: divider
+    description: This micro-service divides one number by another.
+    defaultPort: 3003
+    request:
+      - name: a
+        description: The number to divide
+        type: basic#number
+      - name: b
+        description: The number to divide by
+        type: basic#number
+    response:
+      - name: result
+        description: The quotient of the two numbers
+        type: basic#number

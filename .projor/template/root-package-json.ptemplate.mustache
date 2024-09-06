@@ -1,0 +1,37 @@
+{
+    "map": {
+        "services": "micro-services"
+    },
+    "filename": "package.json",
+    "formatUsing": "json"
+}
+---
+{
+    "name": "perfect-micro-services",
+    "version": "0.0.1",
+    "private": true,
+    "workspaces": [
+        "packages/*"
+    ],
+    "dependencies": {
+        "express": "4.19.2",
+        "dotenv": "16.4.5"
+    },
+    "devDependencies": {
+        "@types/node": "22.5.4",
+        "@types/express": "4.17.21",
+        "@types/mocha": "10.0.7",
+        "esbuild": "0.23.1",
+        "typescript": "5.5.4",
+        "mocha": "10.7.3",
+        "chai": "5.1.1"
+    },
+    "scripts": {
+        {{#each services}}
+        "build:{{kebabCase name}}": "npm run -w {{kebabCase name}}-service build && npm run -w {{kebabCase name}}-service-client build",
+        "test:{{kebabCase name}}": "npm run -w {{kebabCase name}}-service-test start",
+        {{/each}}
+        "build": "{{#each services}}npm run build:{{kebabCase name}}{{#unless @last}} && {{/unless}}{{/each}}",
+        "test": "{{#each services}}npm run test:{{kebabCase name}}{{#unless @last}} && {{/unless}}{{/each}}"
+    }
+}

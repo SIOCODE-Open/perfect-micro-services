@@ -1,0 +1,7 @@
+id: BasicType
+name: Basic Type
+description: A basic type supported in the model, such as int.
+fields:
+  - name: ts
+    type: string
+    description: The TypeScript representation of the type

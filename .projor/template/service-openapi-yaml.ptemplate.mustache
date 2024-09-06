@@ -1,0 +1,57 @@
+{
+    "forEach": "micro-services",
+    "filename": "packages/{{kebabCase name}}-service/openapi.yaml"
+}
+---
+openapi: 3.0.3
+info:
+  title: {{capitalCase name}} Service
+  description: {{{description}}}
+  version: 1.0.0
+servers:
+  - url: http://localhost:{{{defaultPort}}}
+    description: Local development server
+paths:
+  /:
+    post:
+      summary: {{{description}}}
+      description: {{{description}}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+{{#each request}}
+                - {{camelCase name}}
+{{/each}}
+              properties:
+{{#each request}}
+                {{camelCase name}}:
+                  type: {{type.ts}}
+                  description: {{{description}}}
+{{/each}}
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+{{#each response}}
+                  {{camelCase name}}:
+                    type: {{type.ts}}
+                    description: {{{description}}}
+{{/each}}
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Error message explaining why the input was invalid

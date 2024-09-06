@@ -1,0 +1,8 @@
+digraph G {
+"BasicType" [label="Basic Type"];
+"MicroService" [label="Micro-Service"];
+"BodyParameter" [label="Body Parameter"];
+"MicroService" -> "BodyParameter" [label="request" arrowhead=diamond];
+"MicroService" -> "BodyParameter" [label="response" arrowhead=diamond];
+"BodyParameter" -> "BasicType" [label="type" arrowhead=vee];
+}

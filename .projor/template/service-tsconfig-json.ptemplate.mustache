@@ -1,0 +1,21 @@
+{
+    "forEach": "micro-services",
+    "filename": "packages/{{kebabCase name}}-service/tsconfig.json",
+    "formatUsing": "json"
+}
+---
+{
+    "compilerOptions": {
+        "target": "ES2015",
+        "module": "ES2015",
+        "moduleResolution": "Node",
+        "skipLibCheck": true,
+        "allowSyntheticDefaultImports": true
+    },
+    "include": [
+        "src/**/*.ts"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}

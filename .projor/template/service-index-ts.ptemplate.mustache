@@ -1,0 +1,32 @@
+{
+    "forEach": "micro-services",
+    "filename": "packages/{{kebabCase name}}-service/src/index.ts",
+    "formatUsing": "typescript",
+    "once": true
+}
+---
+import * as dotenv from 'dotenv';
+/* Load .env options into process.env */
+dotenv.config();
+
+import express from 'express';
+
+/* The port the service will listen on (defaults to {{{defaultPort}}}) */
+const PORT = parseInt(process.env.{{constantCase name}}_SERVICE_PORT || '{{{defaultPort}}}');
+
+/* Create an Express app */
+const app = express();
+
+/* Set up middleware to parse JSON request bodies */
+app.use(express.json());
+
+/* Create the micro-service endpoint */
+app.post('/', (req, res) => {
+    // FIXME: Implement the service logic here
+    res.status(500).json({ notImplemented: true });
+});
+
+/* Start the service */
+app.listen(PORT, () => {
+    console.log(`{{capitalCase name}} Service listening on port ${PORT}`);
+});

@@ -1,0 +1,17 @@
+{
+    "name": "multiplier-service-client",
+    "version": "0.0.1",
+    "private": true,
+    "type": "module",
+    "main": "lib/index.js",
+    "types": "types/index.d.ts",
+    "scripts": {
+        "build": "tsc"
+    },
+    "dependencies": {},
+    "devDependencies": {
+        "@types/node": "*",
+        "esbuild": "*",
+        "typescript": "*"
+    }
+}

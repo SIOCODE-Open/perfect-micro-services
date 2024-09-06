@@ -1,0 +1,50 @@
+openapi: 3.0.3
+info:
+  title: Divider Service
+  description: This micro-service divides one number by another.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3003
+    description: Local development server
+paths:
+  /:
+    post:
+      summary: This micro-service divides one number by another.
+      description: This micro-service divides one number by another.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - a
+                - b
+              properties:
+                a:
+                  type: number
+                  description: The number to divide
+                b:
+                  type: number
+                  description: The number to divide by
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: number
+                    description: The quotient of the two numbers
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Error message explaining why the input was invalid

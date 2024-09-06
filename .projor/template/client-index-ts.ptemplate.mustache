@@ -1,0 +1,75 @@
+{
+    "forEach": "micro-services",
+    "filename": "packages/{{kebabCase name}}-service-client/src/index.ts",
+    "formatUsing": "typescript"
+}
+---
+/**
+ * The request object for the {{capitalCase name}} Service.
+ */
+export interface I{{pascalCase name}}ServiceRequest {
+    {{#each request}}
+    /**
+     * {{{description}}}
+     */
+    {{camelCase name}}: {{type.ts}};
+
+    {{/each}}
+}
+
+/**
+ * The response object for the {{capitalCase name}} Service.
+ */
+export interface I{{pascalCase name}}ServiceResponse {
+    {{#each response}}
+    /**
+     * {{{description}}}
+     */
+    {{camelCase name}}: {{type.ts}};
+        
+    {{/each}}
+}
+
+/**
+ * Interface for the {{capitalCase name}} Service client.
+ */
+export interface I{{pascalCase name}}ServiceClient {
+    call(request: I{{pascalCase name}}ServiceRequest): Promise<I{{pascalCase name}}ServiceResponse>;
+}
+
+/**
+ * Implementation of the {{capitalCase name}} Service client.
+ */
+class {{pascalCase name}}ServiceClientImpl implements I{{pascalCase name}}ServiceClient {
+
+    private readonly baseUrl: string;
+
+    constructor(baseUrl: string) {
+        this.baseUrl = baseUrl;
+    }
+
+    async call(request: I{{pascalCase name}}ServiceRequest): Promise<I{{pascalCase name}}ServiceResponse> {
+        const response = await fetch(this.baseUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(request)
+        });
+
+        if (!response.ok) {
+            throw new Error(`{{capitalCase name}} Service returned status ${response.status}`);
+        }
+
+        return await response.json();
+    }
+}
+
+/**
+ * Factory function to create an instance of the {{capitalCase name}} Service client.
+ * @param baseUrl The base URL of the {{capitalCase name}} Service.
+ * @returns An instance of the {{capitalCase name}} Service client.
+ */
+export function create{{pascalCase name}}ServiceClient(baseUrl: string): I{{pascalCase name}}ServiceClient {
+    return new {{pascalCase name}}ServiceClientImpl(baseUrl);
+}

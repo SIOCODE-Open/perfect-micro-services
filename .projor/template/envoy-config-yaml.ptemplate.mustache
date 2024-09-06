@@ -1,0 +1,60 @@
+{
+    "map": {
+        "services": "micro-services"
+    },
+    "filename": "envoy.config.yaml"
+}
+---
+admin:
+  address:
+    socket_address:
+      address: 127.0.0.1
+      port_value: 9901
+
+static_resources:
+  listeners:
+    - name: listener_0
+      address:
+        socket_address:
+          address: 0.0.0.0 # Listen on all interfaces
+          port_value: 4000
+      filter_chains:
+        - filters:
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                stat_prefix: ingress_http
+                codec_type: AUTO
+                route_config:
+                  name: local_route
+                  virtual_hosts:
+                    - name: local_service
+                      domains: ["*"]
+                      routes:
+{{#each services}}
+                        - match:
+                            prefix: "/{{kebabCase name}}"
+                          route:
+                            cluster: {{snakeCase name}}_service
+                            prefix_rewrite: "/"
+{{/each}}
+                http_filters:
+                  - name: envoy.filters.http.router
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+  clusters:
+{{#each services}}
+    - name: {{snakeCase name}}_service
+      connect_timeout: 0.25s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: {{snakeCase name}}_service
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: {{kebabCase name}}
+                      port_value: {{{defaultPort}}}
+{{/each}}

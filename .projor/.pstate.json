@@ -1,0 +1,334 @@
+{
+  "generatedSource": [
+    {
+      "filename": "docker-compose.yaml",
+      "content": "version: '3.8'\nservices:\n    adder:\n        build:\n            dockerfile: dockerfiles/adder-service.dockerfile\n            context: .\n        ports:\n            - \"3000:3000\"\n        networks:\n            - app\n        init: true\n    subtractor:\n        build:\n            dockerfile: dockerfiles/subtractor-service.dockerfile\n            context: .\n        ports:\n            - \"3001:3001\"\n        networks:\n            - app\n        init: true\n    multiplier:\n        build:\n            dockerfile: dockerfiles/multiplier-service.dockerfile\n            context: .\n        ports:\n            - \"3002:3002\"\n        networks:\n            - app\n        init: true\n    divider:\n        build:\n            dockerfile: dockerfiles/divider-service.dockerfile\n            context: .\n        ports:\n            - \"3003:3003\"\n        networks:\n            - app\n        init: true\n    api-gateway:\n        image: envoyproxy/envoy:v1.31-latest\n        container_name: envoy\n        volumes:\n            - ./envoy.config.yaml:/etc/envoy/envoy.yaml\n        ports:\n            - \"4000:4000\"\n        command: /usr/local/bin/envoy -c /etc/envoy/envoy.yaml\n        depends_on:\n            - adder\n            - subtractor\n            - multiplier\n            - divider\n        networks:\n            - app\nnetworks:\n    app: {}",
+      "contentHash": "5ab532e5654a323829cb6228974946cad4e74ddf19ba9933543b846895113ec1",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "dockerfiles/adder-service.dockerfile",
+      "content": "# Stage 1: Build the service\nFROM node:22 AS builder\nWORKDIR /app\nADD package.json ./package.json\nADD packages/adder-service/ ./packages/adder-service/\nRUN npm install\nRUN npm run -w adder-service build\n\n# Stage 2: Optimized runtime image\nFROM node:22-alpine\nWORKDIR /app\nCOPY --from=builder /app/packages/adder-service/dist/ ./\nCMD [\"node\", \"index.js\"]\nEXPOSE 3000",
+      "contentHash": "55d597eeef6d5bd43dcb2545a85025bd7b36c73396b6a9a3820e7d5f0610d178",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "dockerfiles/divider-service.dockerfile",
+      "content": "# Stage 1: Build the service\nFROM node:22 AS builder\nWORKDIR /app\nADD package.json ./package.json\nADD packages/divider-service/ ./packages/divider-service/\nRUN npm install\nRUN npm run -w divider-service build\n\n# Stage 2: Optimized runtime image\nFROM node:22-alpine\nWORKDIR /app\nCOPY --from=builder /app/packages/divider-service/dist/ ./\nCMD [\"node\", \"index.js\"]\nEXPOSE 3003",
+      "contentHash": "3a14712d66637e9c129fef175ceb1fa1d880ec27bee0c619d3111442bd8555a9",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "dockerfiles/multiplier-service.dockerfile",
+      "content": "# Stage 1: Build the service\nFROM node:22 AS builder\nWORKDIR /app\nADD package.json ./package.json\nADD packages/multiplier-service/ ./packages/multiplier-service/\nRUN npm install\nRUN npm run -w multiplier-service build\n\n# Stage 2: Optimized runtime image\nFROM node:22-alpine\nWORKDIR /app\nCOPY --from=builder /app/packages/multiplier-service/dist/ ./\nCMD [\"node\", \"index.js\"]\nEXPOSE 3002",
+      "contentHash": "d58580ee8cde205fa8c7c002cba7b700e09f3d1ddc7516a8c605324ab2422962",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "dockerfiles/subtractor-service.dockerfile",
+      "content": "# Stage 1: Build the service\nFROM node:22 AS builder\nWORKDIR /app\nADD package.json ./package.json\nADD packages/subtractor-service/ ./packages/subtractor-service/\nRUN npm install\nRUN npm run -w subtractor-service build\n\n# Stage 2: Optimized runtime image\nFROM node:22-alpine\nWORKDIR /app\nCOPY --from=builder /app/packages/subtractor-service/dist/ ./\nCMD [\"node\", \"index.js\"]\nEXPOSE 3001",
+      "contentHash": "5dda43e5ad0fc09a44fb52564c60573d31ffc1ae053c27e0b3718aa078a30c27",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "envoy.config.yaml",
+      "content": "admin:\n  address:\n    socket_address:\n      address: 127.0.0.1\n      port_value: 9901\n\nstatic_resources:\n  listeners:\n    - name: listener_0\n      address:\n        socket_address:\n          address: 0.0.0.0 # Listen on all interfaces\n          port_value: 4000\n      filter_chains:\n        - filters:\n            - name: envoy.filters.network.http_connection_manager\n              typed_config:\n                \"@type\": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager\n                stat_prefix: ingress_http\n                codec_type: AUTO\n                route_config:\n                  name: local_route\n                  virtual_hosts:\n                    - name: local_service\n                      domains: [\"*\"]\n                      routes:\n                        - match:\n                            prefix: \"/adder\"\n                          route:\n                            cluster: adder_service\n                            prefix_rewrite: \"/\"\n                        - match:\n                            prefix: \"/subtractor\"\n                          route:\n                            cluster: subtractor_service\n                            prefix_rewrite: \"/\"\n                        - match:\n                            prefix: \"/multiplier\"\n                          route:\n                            cluster: multiplier_service\n                            prefix_rewrite: \"/\"\n                        - match:\n                            prefix: \"/divider\"\n                          route:\n                            cluster: divider_service\n                            prefix_rewrite: \"/\"\n                http_filters:\n                  - name: envoy.filters.http.router\n                    typed_config:\n                      \"@type\": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router\n  clusters:\n    - name: adder_service\n      connect_timeout: 0.25s\n      type: STRICT_DNS\n      lb_policy: ROUND_ROBIN\n      load_assignment:\n        cluster_name: adder_service\n        endpoints:\n          - lb_endpoints:\n              - endpoint:\n                  address:\n                    socket_address:\n                      address: adder\n                      port_value: 3000\n    - name: subtractor_service\n      connect_timeout: 0.25s\n      type: STRICT_DNS\n      lb_policy: ROUND_ROBIN\n      load_assignment:\n        cluster_name: subtractor_service\n        endpoints:\n          - lb_endpoints:\n              - endpoint:\n                  address:\n                    socket_address:\n                      address: subtractor\n                      port_value: 3001\n    - name: multiplier_service\n      connect_timeout: 0.25s\n      type: STRICT_DNS\n      lb_policy: ROUND_ROBIN\n      load_assignment:\n        cluster_name: multiplier_service\n        endpoints:\n          - lb_endpoints:\n              - endpoint:\n                  address:\n                    socket_address:\n                      address: multiplier\n                      port_value: 3002\n    - name: divider_service\n      connect_timeout: 0.25s\n      type: STRICT_DNS\n      lb_policy: ROUND_ROBIN\n      load_assignment:\n        cluster_name: divider_service\n        endpoints:\n          - lb_endpoints:\n              - endpoint:\n                  address:\n                    socket_address:\n                      address: divider\n                      port_value: 3003\n",
+      "contentHash": "2685d4c08e9f6d9dec00d4724fda6996e27e0068491bd08c26ca941552bdd5c1",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "package.json",
+      "content": "{\n    \"name\": \"perfect-micro-services\",\n    \"version\": \"0.0.1\",\n    \"private\": true,\n    \"workspaces\": [\"packages/*\"],\n    \"dependencies\": {\n        \"express\": \"4.19.2\",\n        \"dotenv\": \"16.4.5\"\n    },\n    \"devDependencies\": {\n        \"@types/node\": \"22.5.4\",\n        \"@types/express\": \"4.17.21\",\n        \"@types/mocha\": \"10.0.7\",\n        \"esbuild\": \"0.23.1\",\n        \"typescript\": \"5.5.4\",\n        \"mocha\": \"10.7.3\",\n        \"chai\": \"5.1.1\"\n    },\n    \"scripts\": {\n        \"build:adder\": \"npm run -w adder-service build && npm run -w adder-service-client build\",\n        \"test:adder\": \"npm run -w adder-service-test start\",\n        \"build:subtractor\": \"npm run -w subtractor-service build && npm run -w subtractor-service-client build\",\n        \"test:subtractor\": \"npm run -w subtractor-service-test start\",\n        \"build:multiplier\": \"npm run -w multiplier-service build && npm run -w multiplier-service-client build\",\n        \"test:multiplier\": \"npm run -w multiplier-service-test start\",\n        \"build:divider\": \"npm run -w divider-service build && npm run -w divider-service-client build\",\n        \"test:divider\": \"npm run -w divider-service-test start\",\n        \"build\": \"npm run build:adder && npm run build:subtractor && npm run build:multiplier && npm run build:divider\",\n        \"test\": \"npm run test:adder && npm run test:subtractor && npm run test:multiplier && npm run test:divider\"\n    }\n}\n",
+      "contentHash": "a26c55d13f0ecbaa87171a05e06bd5e8cfcf614dea04afccfda1bd18b2e8b57b",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/adder-service-client/.gitignore",
+      "content": "lib/\ntypes/",
+      "contentHash": "42a18630f099022ae9b7ddad75446504d145005e1d0588c11c8f0355734abcea",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/adder-service-client/package.json",
+      "content": "{\n    \"name\": \"adder-service-client\",\n    \"version\": \"0.0.1\",\n    \"private\": true,\n    \"type\": \"module\",\n    \"main\": \"lib/index.js\",\n    \"types\": \"types/index.d.ts\",\n    \"scripts\": {\n        \"build\": \"tsc\"\n    },\n    \"dependencies\": {},\n    \"devDependencies\": {\n        \"@types/node\": \"*\",\n        \"esbuild\": \"*\",\n        \"typescript\": \"*\"\n    }\n}\n",
+      "contentHash": "7be57d6999d404b6cf42cf72c7b17c4a081606fcf5a682d71454e708166521b6",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/adder-service-client/src/index.ts",
+      "content": "/**\n * The request object for the Adder Service.\n */\nexport interface IAdderServiceRequest {\n    /**\n     * The first number\n     */\n    a: number;\n\n    /**\n     * The second number\n     */\n    b: number;\n}\n\n/**\n * The response object for the Adder Service.\n */\nexport interface IAdderServiceResponse {\n    /**\n     * The sum of the two numbers\n     */\n    result: number;\n}\n\n/**\n * Interface for the Adder Service client.\n */\nexport interface IAdderServiceClient {\n    call(request: IAdderServiceRequest): Promise<IAdderServiceResponse>;\n}\n\n/**\n * Implementation of the Adder Service client.\n */\nclass AdderServiceClientImpl implements IAdderServiceClient {\n    private readonly baseUrl: string;\n\n    constructor(baseUrl: string) {\n        this.baseUrl = baseUrl;\n    }\n\n    async call(request: IAdderServiceRequest): Promise<IAdderServiceResponse> {\n        const response = await fetch(this.baseUrl, {\n            method: \"POST\",\n            headers: {\n                \"Content-Type\": \"application/json\",\n            },\n            body: JSON.stringify(request),\n        });\n\n        if (!response.ok) {\n            throw new Error(`Adder Service returned status ${response.status}`);\n        }\n\n        return await response.json();\n    }\n}\n\n/**\n * Factory function to create an instance of the Adder Service client.\n * @param baseUrl The base URL of the Adder Service.\n * @returns An instance of the Adder Service client.\n */\nexport function createAdderServiceClient(baseUrl: string): IAdderServiceClient {\n    return new AdderServiceClientImpl(baseUrl);\n}\n",
+      "contentHash": "4bf2e7e0234b39f55976a127123277dc342f1f5d50636f74ab2281bf523b63ec",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/adder-service-client/tsconfig.json",
+      "content": "{\n    \"compilerOptions\": {\n        \"target\": \"ES2015\",\n        \"module\": \"ES2015\",\n        \"moduleResolution\": \"Node\",\n        \"declaration\": true,\n        \"declarationDir\": \"types\",\n        \"outDir\": \"lib\",\n        \"skipLibCheck\": true,\n        \"allowSyntheticDefaultImports\": true\n    },\n    \"include\": [\"src/**/*.ts\"],\n    \"exclude\": [\"node_modules\"]\n}\n",
+      "contentHash": "14985bd176f8a28b98e6845a2d00a2be6f5a706ef683d93b369e4fe5a58ae32b",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/adder-service-test/package.json",
+      "content": "{\n    \"name\": \"adder-service-test\",\n    \"version\": \"0.0.1\",\n    \"private\": true,\n    \"type\": \"module\",\n    \"scripts\": {\n        \"start\": \"mocha src/**/*.test.js\"\n    },\n    \"dependencies\": {\n        \"adder-service-client\": \"*\"\n    },\n    \"devDependencies\": {\n        \"@types/mocha\": \"*\",\n        \"mocha\": \"*\",\n        \"chai\": \"*\"\n    }\n}\n",
+      "contentHash": "62b43026409d4aebf2e4d0356a72aa77d5557fedc20107a0edea401f66af7a3b",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/adder-service-test/src/index.test.js",
+      "content": "import { createAdderServiceClient } from \"adder-service-client\";\nimport { expect } from \"chai\";\n\ndescribe(\"Adder Service\", () => {\n    const client = createAdderServiceClient(\"http://127.0.0.1:3000\");\n\n    // FIXME: Implement tests here\n});\n",
+      "contentHash": "7bd8764b8bc6771469bae306bc7defd6296e30269de3de7e5c4e3645982ba0db",
+      "noWriteIfExists": true
+    },
+    {
+      "filename": "packages/adder-service/.gitignore",
+      "content": "dist/",
+      "contentHash": "887f42eeae4276a8ba8ed3e14ec6567107ed2760d18ea7303cc715a38670fbea",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/adder-service/openapi.yaml",
+      "content": "openapi: 3.0.3\ninfo:\n  title: Adder Service\n  description: This micro-service adds two numbers together.\n  version: 1.0.0\nservers:\n  - url: http://localhost:3000\n    description: Local development server\npaths:\n  /:\n    post:\n      summary: This micro-service adds two numbers together.\n      description: This micro-service adds two numbers together.\n      requestBody:\n        required: true\n        content:\n          application/json:\n            schema:\n              type: object\n              required:\n                - a\n                - b\n              properties:\n                a:\n                  type: number\n                  description: The first number\n                b:\n                  type: number\n                  description: The second number\n      responses:\n        '200':\n          description: Successful operation\n          content:\n            application/json:\n              schema:\n                type: object\n                properties:\n                  result:\n                    type: number\n                    description: The sum of the two numbers\n        '400':\n          description: Invalid input\n          content:\n            application/json:\n              schema:\n                type: object\n                properties:\n                  error:\n                    type: string\n                    description: Error message explaining why the input was invalid",
+      "contentHash": "99d27a906e033df9cbb5b06b112767eddfa985489fc7211f88fd0aed72fe2485",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/adder-service/package.json",
+      "content": "{\n    \"name\": \"adder-service\",\n    \"version\": \"0.0.1\",\n    \"private\": true,\n    \"main\": \"dist/index.js\",\n    \"scripts\": {\n        \"build\": \"esbuild src/index.ts --bundle --minify --platform=node --outfile=dist/index.js\",\n        \"start\": \"node dist/index.js\"\n    },\n    \"dependencies\": {\n        \"express\": \"*\",\n        \"dotenv\": \"*\"\n    },\n    \"devDependencies\": {\n        \"@types/node\": \"*\",\n        \"@types/express\": \"*\",\n        \"esbuild\": \"*\",\n        \"typescript\": \"*\"\n    }\n}\n",
+      "contentHash": "85c62e46a9287a7294481aa8599d970fda92a97a5f8c08382193272bdc5d2976",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/adder-service/README.md",
+      "content": "# Adder Service\n\nThis micro-service adds two numbers together.\n\n## Building\n\nYou can use the following commands in the **repository root directory** to build this service.\n\n* To build the service on your host:\n\n```\nnpm run -w adder-service build\n```\n\n* To build the Docker container:\n\n```\ndocker build -t adder-service:latest -f dockerfiles/adder-service.dockerfile .\n```\n\n## Configuration\n\nThe service supports the following variables, either set in the `.env` file, or as environment variables:\n\n* `ADDER_SERVICE_PORT` - The port the service listens on. Defaults to `3000`.\n\n## Reference\n\n### `POST /`\n\n_Request parameters_\n\n* `a` : `number` - The first number\n* `b` : `number` - The second number\n\n_Response properties_\n\n* `result` : `number` - The sum of the two numbers\n",
+      "contentHash": "7f19fd2467b817a2f2839fb4afe494d9875d672a8220ca6233eb859813d76a4b",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/adder-service/src/index.ts",
+      "content": "import * as dotenv from \"dotenv\";\n/* Load .env options into process.env */\ndotenv.config();\n\nimport express from \"express\";\n\n/* The port the service will listen on (defaults to 3000) */\nconst PORT = parseInt(process.env.ADDER_SERVICE_PORT || \"3000\");\n\n/* Create an Express app */\nconst app = express();\n\n/* Set up middleware to parse JSON request bodies */\napp.use(express.json());\n\n/* Create the micro-service endpoint */\napp.post(\"/\", (req, res) => {\n    // FIXME: Implement the service logic here\n    res.status(500).json({ notImplemented: true });\n});\n\n/* Start the service */\napp.listen(PORT, () => {\n    console.log(`Adder Service listening on port ${PORT}`);\n});\n",
+      "contentHash": "2d13c496ffb87c8a5374889baf4ac5e03bfe4d8cb42755ea14d25db946f142ad",
+      "noWriteIfExists": true
+    },
+    {
+      "filename": "packages/adder-service/tsconfig.json",
+      "content": "{\n    \"compilerOptions\": {\n        \"target\": \"ES2015\",\n        \"module\": \"ES2015\",\n        \"moduleResolution\": \"Node\",\n        \"skipLibCheck\": true,\n        \"allowSyntheticDefaultImports\": true\n    },\n    \"include\": [\"src/**/*.ts\"],\n    \"exclude\": [\"node_modules\"]\n}\n",
+      "contentHash": "0cbef8da916c088c0f9460cf4842270b05801b62ef3f2da6d451cfbc19b0cc7c",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/divider-service-client/.gitignore",
+      "content": "lib/\ntypes/",
+      "contentHash": "42a18630f099022ae9b7ddad75446504d145005e1d0588c11c8f0355734abcea",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/divider-service-client/package.json",
+      "content": "{\n    \"name\": \"divider-service-client\",\n    \"version\": \"0.0.1\",\n    \"private\": true,\n    \"type\": \"module\",\n    \"main\": \"lib/index.js\",\n    \"types\": \"types/index.d.ts\",\n    \"scripts\": {\n        \"build\": \"tsc\"\n    },\n    \"dependencies\": {},\n    \"devDependencies\": {\n        \"@types/node\": \"*\",\n        \"esbuild\": \"*\",\n        \"typescript\": \"*\"\n    }\n}\n",
+      "contentHash": "57dbdf068c6d072d9c6260b7caebe3d7f8410df9bffe9182884beb3e8c7c5bc9",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/divider-service-client/src/index.ts",
+      "content": "/**\n * The request object for the Divider Service.\n */\nexport interface IDividerServiceRequest {\n    /**\n     * The number to divide\n     */\n    a: number;\n\n    /**\n     * The number to divide by\n     */\n    b: number;\n}\n\n/**\n * The response object for the Divider Service.\n */\nexport interface IDividerServiceResponse {\n    /**\n     * The quotient of the two numbers\n     */\n    result: number;\n}\n\n/**\n * Interface for the Divider Service client.\n */\nexport interface IDividerServiceClient {\n    call(request: IDividerServiceRequest): Promise<IDividerServiceResponse>;\n}\n\n/**\n * Implementation of the Divider Service client.\n */\nclass DividerServiceClientImpl implements IDividerServiceClient {\n    private readonly baseUrl: string;\n\n    constructor(baseUrl: string) {\n        this.baseUrl = baseUrl;\n    }\n\n    async call(\n        request: IDividerServiceRequest\n    ): Promise<IDividerServiceResponse> {\n        const response = await fetch(this.baseUrl, {\n            method: \"POST\",\n            headers: {\n                \"Content-Type\": \"application/json\",\n            },\n            body: JSON.stringify(request),\n        });\n\n        if (!response.ok) {\n            throw new Error(\n                `Divider Service returned status ${response.status}`\n            );\n        }\n\n        return await response.json();\n    }\n}\n\n/**\n * Factory function to create an instance of the Divider Service client.\n * @param baseUrl The base URL of the Divider Service.\n * @returns An instance of the Divider Service client.\n */\nexport function createDividerServiceClient(\n    baseUrl: string\n): IDividerServiceClient {\n    return new DividerServiceClientImpl(baseUrl);\n}\n",
+      "contentHash": "3f8dad9c190988740fd4fac428217b3bdf0425e39833881d611253aa9e45a75f",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/divider-service-client/tsconfig.json",
+      "content": "{\n    \"compilerOptions\": {\n        \"target\": \"ES2015\",\n        \"module\": \"ES2015\",\n        \"moduleResolution\": \"Node\",\n        \"declaration\": true,\n        \"declarationDir\": \"types\",\n        \"outDir\": \"lib\",\n        \"skipLibCheck\": true,\n        \"allowSyntheticDefaultImports\": true\n    },\n    \"include\": [\"src/**/*.ts\"],\n    \"exclude\": [\"node_modules\"]\n}\n",
+      "contentHash": "14985bd176f8a28b98e6845a2d00a2be6f5a706ef683d93b369e4fe5a58ae32b",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/divider-service-test/package.json",
+      "content": "{\n    \"name\": \"divider-service-test\",\n    \"version\": \"0.0.1\",\n    \"private\": true,\n    \"type\": \"module\",\n    \"scripts\": {\n        \"start\": \"mocha src/**/*.test.js\"\n    },\n    \"dependencies\": {\n        \"divider-service-client\": \"*\"\n    },\n    \"devDependencies\": {\n        \"@types/mocha\": \"*\",\n        \"mocha\": \"*\",\n        \"chai\": \"*\"\n    }\n}\n",
+      "contentHash": "3c94791835dfa83afc1cc8876530c705dfa937140811bce28fa3dfbba401efd7",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/divider-service-test/src/index.test.js",
+      "content": "import { createDividerServiceClient } from \"divider-service-client\";\nimport { expect } from \"chai\";\n\ndescribe(\"Divider Service\", () => {\n    const client = createDividerServiceClient(\"http://127.0.0.1:3003\");\n\n    // FIXME: Implement tests here\n});\n",
+      "contentHash": "f83da4b771b33293a1834ee414f3ec87f0674c034bdc239249f053a734bef0b9",
+      "noWriteIfExists": true
+    },
+    {
+      "filename": "packages/divider-service/.gitignore",
+      "content": "dist/",
+      "contentHash": "887f42eeae4276a8ba8ed3e14ec6567107ed2760d18ea7303cc715a38670fbea",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/divider-service/openapi.yaml",
+      "content": "openapi: 3.0.3\ninfo:\n  title: Divider Service\n  description: This micro-service divides one number by another.\n  version: 1.0.0\nservers:\n  - url: http://localhost:3003\n    description: Local development server\npaths:\n  /:\n    post:\n      summary: This micro-service divides one number by another.\n      description: This micro-service divides one number by another.\n      requestBody:\n        required: true\n        content:\n          application/json:\n            schema:\n              type: object\n              required:\n                - a\n                - b\n              properties:\n                a:\n                  type: number\n                  description: The number to divide\n                b:\n                  type: number\n                  description: The number to divide by\n      responses:\n        '200':\n          description: Successful operation\n          content:\n            application/json:\n              schema:\n                type: object\n                properties:\n                  result:\n                    type: number\n                    description: The quotient of the two numbers\n        '400':\n          description: Invalid input\n          content:\n            application/json:\n              schema:\n                type: object\n                properties:\n                  error:\n                    type: string\n                    description: Error message explaining why the input was invalid",
+      "contentHash": "29fcea5372092086bbd579513eaa3d7f3a26483692edaeff91a919925e9f48a5",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/divider-service/package.json",
+      "content": "{\n    \"name\": \"divider-service\",\n    \"version\": \"0.0.1\",\n    \"private\": true,\n    \"main\": \"dist/index.js\",\n    \"scripts\": {\n        \"build\": \"esbuild src/index.ts --bundle --minify --platform=node --outfile=dist/index.js\",\n        \"start\": \"node dist/index.js\"\n    },\n    \"dependencies\": {\n        \"express\": \"*\",\n        \"dotenv\": \"*\"\n    },\n    \"devDependencies\": {\n        \"@types/node\": \"*\",\n        \"@types/express\": \"*\",\n        \"esbuild\": \"*\",\n        \"typescript\": \"*\"\n    }\n}\n",
+      "contentHash": "3ae700bb3b31b4caa18d44a921cb8a62b71b5fee5eede97d484c5168c3b6d495",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/divider-service/README.md",
+      "content": "# Divider Service\n\nThis micro-service divides one number by another.\n\n## Building\n\nYou can use the following commands in the **repository root directory** to build this service.\n\n* To build the service on your host:\n\n```\nnpm run -w divider-service build\n```\n\n* To build the Docker container:\n\n```\ndocker build -t divider-service:latest -f dockerfiles/divider-service.dockerfile .\n```\n\n## Configuration\n\nThe service supports the following variables, either set in the `.env` file, or as environment variables:\n\n* `DIVIDER_SERVICE_PORT` - The port the service listens on. Defaults to `3003`.\n\n## Reference\n\n### `POST /`\n\n_Request parameters_\n\n* `a` : `number` - The number to divide\n* `b` : `number` - The number to divide by\n\n_Response properties_\n\n* `result` : `number` - The quotient of the two numbers\n",
+      "contentHash": "f3bf9bd7af46b6fb7be5bb00a86091e8f8e2d45daff28ce773388813ccfc91b2",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/divider-service/src/index.ts",
+      "content": "import * as dotenv from \"dotenv\";\n/* Load .env options into process.env */\ndotenv.config();\n\nimport express from \"express\";\n\n/* The port the service will listen on (defaults to 3003) */\nconst PORT = parseInt(process.env.DIVIDER_SERVICE_PORT || \"3003\");\n\n/* Create an Express app */\nconst app = express();\n\n/* Set up middleware to parse JSON request bodies */\napp.use(express.json());\n\n/* Create the micro-service endpoint */\napp.post(\"/\", (req, res) => {\n    // FIXME: Implement the service logic here\n    res.status(500).json({ notImplemented: true });\n});\n\n/* Start the service */\napp.listen(PORT, () => {\n    console.log(`Divider Service listening on port ${PORT}`);\n});\n",
+      "contentHash": "dad844bac776bdfd08024a14a7e7b4cdec7b667be3ea95efa09b70de26748bc3",
+      "noWriteIfExists": true
+    },
+    {
+      "filename": "packages/divider-service/tsconfig.json",
+      "content": "{\n    \"compilerOptions\": {\n        \"target\": \"ES2015\",\n        \"module\": \"ES2015\",\n        \"moduleResolution\": \"Node\",\n        \"skipLibCheck\": true,\n        \"allowSyntheticDefaultImports\": true\n    },\n    \"include\": [\"src/**/*.ts\"],\n    \"exclude\": [\"node_modules\"]\n}\n",
+      "contentHash": "0cbef8da916c088c0f9460cf4842270b05801b62ef3f2da6d451cfbc19b0cc7c",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/multiplier-service-client/.gitignore",
+      "content": "lib/\ntypes/",
+      "contentHash": "42a18630f099022ae9b7ddad75446504d145005e1d0588c11c8f0355734abcea",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/multiplier-service-client/package.json",
+      "content": "{\n    \"name\": \"multiplier-service-client\",\n    \"version\": \"0.0.1\",\n    \"private\": true,\n    \"type\": \"module\",\n    \"main\": \"lib/index.js\",\n    \"types\": \"types/index.d.ts\",\n    \"scripts\": {\n        \"build\": \"tsc\"\n    },\n    \"dependencies\": {},\n    \"devDependencies\": {\n        \"@types/node\": \"*\",\n        \"esbuild\": \"*\",\n        \"typescript\": \"*\"\n    }\n}\n",
+      "contentHash": "5848308883fa5bd01fcf3f25c4216c25ed7d991abefeb46c975e74c56854c6d5",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/multiplier-service-client/src/index.ts",
+      "content": "/**\n * The request object for the Multiplier Service.\n */\nexport interface IMultiplierServiceRequest {\n    /**\n     * The first number\n     */\n    a: number;\n\n    /**\n     * The second number\n     */\n    b: number;\n}\n\n/**\n * The response object for the Multiplier Service.\n */\nexport interface IMultiplierServiceResponse {\n    /**\n     * The product of the two numbers\n     */\n    result: number;\n}\n\n/**\n * Interface for the Multiplier Service client.\n */\nexport interface IMultiplierServiceClient {\n    call(\n        request: IMultiplierServiceRequest\n    ): Promise<IMultiplierServiceResponse>;\n}\n\n/**\n * Implementation of the Multiplier Service client.\n */\nclass MultiplierServiceClientImpl implements IMultiplierServiceClient {\n    private readonly baseUrl: string;\n\n    constructor(baseUrl: string) {\n        this.baseUrl = baseUrl;\n    }\n\n    async call(\n        request: IMultiplierServiceRequest\n    ): Promise<IMultiplierServiceResponse> {\n        const response = await fetch(this.baseUrl, {\n            method: \"POST\",\n            headers: {\n                \"Content-Type\": \"application/json\",\n            },\n            body: JSON.stringify(request),\n        });\n\n        if (!response.ok) {\n            throw new Error(\n                `Multiplier Service returned status ${response.status}`\n            );\n        }\n\n        return await response.json();\n    }\n}\n\n/**\n * Factory function to create an instance of the Multiplier Service client.\n * @param baseUrl The base URL of the Multiplier Service.\n * @returns An instance of the Multiplier Service client.\n */\nexport function createMultiplierServiceClient(\n    baseUrl: string\n): IMultiplierServiceClient {\n    return new MultiplierServiceClientImpl(baseUrl);\n}\n",
+      "contentHash": "773c32e8bf3abb66e8e8cca4f8370ae2ad1b5a71b2ccda9f4a7e06f066fb5350",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/multiplier-service-client/tsconfig.json",
+      "content": "{\n    \"compilerOptions\": {\n        \"target\": \"ES2015\",\n        \"module\": \"ES2015\",\n        \"moduleResolution\": \"Node\",\n        \"declaration\": true,\n        \"declarationDir\": \"types\",\n        \"outDir\": \"lib\",\n        \"skipLibCheck\": true,\n        \"allowSyntheticDefaultImports\": true\n    },\n    \"include\": [\"src/**/*.ts\"],\n    \"exclude\": [\"node_modules\"]\n}\n",
+      "contentHash": "14985bd176f8a28b98e6845a2d00a2be6f5a706ef683d93b369e4fe5a58ae32b",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/multiplier-service-test/package.json",
+      "content": "{\n    \"name\": \"multiplier-service-test\",\n    \"version\": \"0.0.1\",\n    \"private\": true,\n    \"type\": \"module\",\n    \"scripts\": {\n        \"start\": \"mocha src/**/*.test.js\"\n    },\n    \"dependencies\": {\n        \"multiplier-service-client\": \"*\"\n    },\n    \"devDependencies\": {\n        \"@types/mocha\": \"*\",\n        \"mocha\": \"*\",\n        \"chai\": \"*\"\n    }\n}\n",
+      "contentHash": "4bb3df57b3386213f2e7f99dfe4620dceab4aa5b8b8d07d82866de9e14ff1630",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/multiplier-service-test/src/index.test.js",
+      "content": "import { createMultiplierServiceClient } from \"multiplier-service-client\";\nimport { expect } from \"chai\";\n\ndescribe(\"Multiplier Service\", () => {\n    const client = createMultiplierServiceClient(\"http://127.0.0.1:3002\");\n\n    // FIXME: Implement tests here\n});\n",
+      "contentHash": "faefbf57f135b702d7beccc518e29074ca83e8e4711fb7073d867490c82e29df",
+      "noWriteIfExists": true
+    },
+    {
+      "filename": "packages/multiplier-service/.gitignore",
+      "content": "dist/",
+      "contentHash": "887f42eeae4276a8ba8ed3e14ec6567107ed2760d18ea7303cc715a38670fbea",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/multiplier-service/openapi.yaml",
+      "content": "openapi: 3.0.3\ninfo:\n  title: Multiplier Service\n  description: This micro-service multiplies two numbers together.\n  version: 1.0.0\nservers:\n  - url: http://localhost:3002\n    description: Local development server\npaths:\n  /:\n    post:\n      summary: This micro-service multiplies two numbers together.\n      description: This micro-service multiplies two numbers together.\n      requestBody:\n        required: true\n        content:\n          application/json:\n            schema:\n              type: object\n              required:\n                - a\n                - b\n              properties:\n                a:\n                  type: number\n                  description: The first number\n                b:\n                  type: number\n                  description: The second number\n      responses:\n        '200':\n          description: Successful operation\n          content:\n            application/json:\n              schema:\n                type: object\n                properties:\n                  result:\n                    type: number\n                    description: The product of the two numbers\n        '400':\n          description: Invalid input\n          content:\n            application/json:\n              schema:\n                type: object\n                properties:\n                  error:\n                    type: string\n                    description: Error message explaining why the input was invalid",
+      "contentHash": "38858d26eff12c3202e66b8d3db7c81e3986132fa90a0b9a2c22bbe1edfd7630",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/multiplier-service/package.json",
+      "content": "{\n    \"name\": \"multiplier-service\",\n    \"version\": \"0.0.1\",\n    \"private\": true,\n    \"main\": \"dist/index.js\",\n    \"scripts\": {\n        \"build\": \"esbuild src/index.ts --bundle --minify --platform=node --outfile=dist/index.js\",\n        \"start\": \"node dist/index.js\"\n    },\n    \"dependencies\": {\n        \"express\": \"*\",\n        \"dotenv\": \"*\"\n    },\n    \"devDependencies\": {\n        \"@types/node\": \"*\",\n        \"@types/express\": \"*\",\n        \"esbuild\": \"*\",\n        \"typescript\": \"*\"\n    }\n}\n",
+      "contentHash": "cee8e15bf429b3e417f7062876ae9c0ddc825c6daa6910c46f8c11d858bc03c0",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/multiplier-service/README.md",
+      "content": "# Multiplier Service\n\nThis micro-service multiplies two numbers together.\n\n## Building\n\nYou can use the following commands in the **repository root directory** to build this service.\n\n* To build the service on your host:\n\n```\nnpm run -w multiplier-service build\n```\n\n* To build the Docker container:\n\n```\ndocker build -t multiplier-service:latest -f dockerfiles/multiplier-service.dockerfile .\n```\n\n## Configuration\n\nThe service supports the following variables, either set in the `.env` file, or as environment variables:\n\n* `MULTIPLIER_SERVICE_PORT` - The port the service listens on. Defaults to `3002`.\n\n## Reference\n\n### `POST /`\n\n_Request parameters_\n\n* `a` : `number` - The first number\n* `b` : `number` - The second number\n\n_Response properties_\n\n* `result` : `number` - The product of the two numbers\n",
+      "contentHash": "871ece3d40b8fdfe4e4f964ad2832cd14bafad54d6f718532d1907ff38bc03b1",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/multiplier-service/src/index.ts",
+      "content": "import * as dotenv from \"dotenv\";\n/* Load .env options into process.env */\ndotenv.config();\n\nimport express from \"express\";\n\n/* The port the service will listen on (defaults to 3002) */\nconst PORT = parseInt(process.env.MULTIPLIER_SERVICE_PORT || \"3002\");\n\n/* Create an Express app */\nconst app = express();\n\n/* Set up middleware to parse JSON request bodies */\napp.use(express.json());\n\n/* Create the micro-service endpoint */\napp.post(\"/\", (req, res) => {\n    // FIXME: Implement the service logic here\n    res.status(500).json({ notImplemented: true });\n});\n\n/* Start the service */\napp.listen(PORT, () => {\n    console.log(`Multiplier Service listening on port ${PORT}`);\n});\n",
+      "contentHash": "c2b028b00165f4be06c65994a61b5884927c3426fe391cd3c03044bbe89eca87",
+      "noWriteIfExists": true
+    },
+    {
+      "filename": "packages/multiplier-service/tsconfig.json",
+      "content": "{\n    \"compilerOptions\": {\n        \"target\": \"ES2015\",\n        \"module\": \"ES2015\",\n        \"moduleResolution\": \"Node\",\n        \"skipLibCheck\": true,\n        \"allowSyntheticDefaultImports\": true\n    },\n    \"include\": [\"src/**/*.ts\"],\n    \"exclude\": [\"node_modules\"]\n}\n",
+      "contentHash": "0cbef8da916c088c0f9460cf4842270b05801b62ef3f2da6d451cfbc19b0cc7c",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/subtractor-service-client/.gitignore",
+      "content": "lib/\ntypes/",
+      "contentHash": "42a18630f099022ae9b7ddad75446504d145005e1d0588c11c8f0355734abcea",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/subtractor-service-client/package.json",
+      "content": "{\n    \"name\": \"subtractor-service-client\",\n    \"version\": \"0.0.1\",\n    \"private\": true,\n    \"type\": \"module\",\n    \"main\": \"lib/index.js\",\n    \"types\": \"types/index.d.ts\",\n    \"scripts\": {\n        \"build\": \"tsc\"\n    },\n    \"dependencies\": {},\n    \"devDependencies\": {\n        \"@types/node\": \"*\",\n        \"esbuild\": \"*\",\n        \"typescript\": \"*\"\n    }\n}\n",
+      "contentHash": "c3bb8b75038e94a92d9dc1e24fdcc9bed48b6007a8000159ec47afafeff41b3c",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/subtractor-service-client/src/index.ts",
+      "content": "/**\n * The request object for the Subtractor Service.\n */\nexport interface ISubtractorServiceRequest {\n    /**\n     * The number to subtract from\n     */\n    a: number;\n\n    /**\n     * The number to subtract\n     */\n    b: number;\n}\n\n/**\n * The response object for the Subtractor Service.\n */\nexport interface ISubtractorServiceResponse {\n    /**\n     * The difference of the two numbers\n     */\n    result: number;\n}\n\n/**\n * Interface for the Subtractor Service client.\n */\nexport interface ISubtractorServiceClient {\n    call(\n        request: ISubtractorServiceRequest\n    ): Promise<ISubtractorServiceResponse>;\n}\n\n/**\n * Implementation of the Subtractor Service client.\n */\nclass SubtractorServiceClientImpl implements ISubtractorServiceClient {\n    private readonly baseUrl: string;\n\n    constructor(baseUrl: string) {\n        this.baseUrl = baseUrl;\n    }\n\n    async call(\n        request: ISubtractorServiceRequest\n    ): Promise<ISubtractorServiceResponse> {\n        const response = await fetch(this.baseUrl, {\n            method: \"POST\",\n            headers: {\n                \"Content-Type\": \"application/json\",\n            },\n            body: JSON.stringify(request),\n        });\n\n        if (!response.ok) {\n            throw new Error(\n                `Subtractor Service returned status ${response.status}`\n            );\n        }\n\n        return await response.json();\n    }\n}\n\n/**\n * Factory function to create an instance of the Subtractor Service client.\n * @param baseUrl The base URL of the Subtractor Service.\n * @returns An instance of the Subtractor Service client.\n */\nexport function createSubtractorServiceClient(\n    baseUrl: string\n): ISubtractorServiceClient {\n    return new SubtractorServiceClientImpl(baseUrl);\n}\n",
+      "contentHash": "33c318f90d9940c4ac8b50a4a563f0403e6c100fd8f5c9231f982fb9f283203e",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/subtractor-service-client/tsconfig.json",
+      "content": "{\n    \"compilerOptions\": {\n        \"target\": \"ES2015\",\n        \"module\": \"ES2015\",\n        \"moduleResolution\": \"Node\",\n        \"declaration\": true,\n        \"declarationDir\": \"types\",\n        \"outDir\": \"lib\",\n        \"skipLibCheck\": true,\n        \"allowSyntheticDefaultImports\": true\n    },\n    \"include\": [\"src/**/*.ts\"],\n    \"exclude\": [\"node_modules\"]\n}\n",
+      "contentHash": "14985bd176f8a28b98e6845a2d00a2be6f5a706ef683d93b369e4fe5a58ae32b",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/subtractor-service-test/package.json",
+      "content": "{\n    \"name\": \"subtractor-service-test\",\n    \"version\": \"0.0.1\",\n    \"private\": true,\n    \"type\": \"module\",\n    \"scripts\": {\n        \"start\": \"mocha src/**/*.test.js\"\n    },\n    \"dependencies\": {\n        \"subtractor-service-client\": \"*\"\n    },\n    \"devDependencies\": {\n        \"@types/mocha\": \"*\",\n        \"mocha\": \"*\",\n        \"chai\": \"*\"\n    }\n}\n",
+      "contentHash": "2fcc49459e2b8cd1e2605dd86469f1a33f4472478fd806847be98688a9167832",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/subtractor-service-test/src/index.test.js",
+      "content": "import { createSubtractorServiceClient } from \"subtractor-service-client\";\nimport { expect } from \"chai\";\n\ndescribe(\"Subtractor Service\", () => {\n    const client = createSubtractorServiceClient(\"http://127.0.0.1:3001\");\n\n    // FIXME: Implement tests here\n});\n",
+      "contentHash": "66d55a63e96dea2f7921de1138b2bd1a6d54dcfd7a771c6c427fc017c7a535a3",
+      "noWriteIfExists": true
+    },
+    {
+      "filename": "packages/subtractor-service/.gitignore",
+      "content": "dist/",
+      "contentHash": "887f42eeae4276a8ba8ed3e14ec6567107ed2760d18ea7303cc715a38670fbea",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/subtractor-service/openapi.yaml",
+      "content": "openapi: 3.0.3\ninfo:\n  title: Subtractor Service\n  description: This micro-service subtracts one number from another.\n  version: 1.0.0\nservers:\n  - url: http://localhost:3001\n    description: Local development server\npaths:\n  /:\n    post:\n      summary: This micro-service subtracts one number from another.\n      description: This micro-service subtracts one number from another.\n      requestBody:\n        required: true\n        content:\n          application/json:\n            schema:\n              type: object\n              required:\n                - a\n                - b\n              properties:\n                a:\n                  type: number\n                  description: The number to subtract from\n                b:\n                  type: number\n                  description: The number to subtract\n      responses:\n        '200':\n          description: Successful operation\n          content:\n            application/json:\n              schema:\n                type: object\n                properties:\n                  result:\n                    type: number\n                    description: The difference of the two numbers\n        '400':\n          description: Invalid input\n          content:\n            application/json:\n              schema:\n                type: object\n                properties:\n                  error:\n                    type: string\n                    description: Error message explaining why the input was invalid",
+      "contentHash": "9de3d390960dac9bdfbef0c85f9df04daeb0a43e9ee835759c109172919080bf",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/subtractor-service/package.json",
+      "content": "{\n    \"name\": \"subtractor-service\",\n    \"version\": \"0.0.1\",\n    \"private\": true,\n    \"main\": \"dist/index.js\",\n    \"scripts\": {\n        \"build\": \"esbuild src/index.ts --bundle --minify --platform=node --outfile=dist/index.js\",\n        \"start\": \"node dist/index.js\"\n    },\n    \"dependencies\": {\n        \"express\": \"*\",\n        \"dotenv\": \"*\"\n    },\n    \"devDependencies\": {\n        \"@types/node\": \"*\",\n        \"@types/express\": \"*\",\n        \"esbuild\": \"*\",\n        \"typescript\": \"*\"\n    }\n}\n",
+      "contentHash": "1befa5901597a55c690c1c9bfb51830d0421e35c86eb59fb34eb8c8a8c84d081",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/subtractor-service/README.md",
+      "content": "# Subtractor Service\n\nThis micro-service subtracts one number from another.\n\n## Building\n\nYou can use the following commands in the **repository root directory** to build this service.\n\n* To build the service on your host:\n\n```\nnpm run -w subtractor-service build\n```\n\n* To build the Docker container:\n\n```\ndocker build -t subtractor-service:latest -f dockerfiles/subtractor-service.dockerfile .\n```\n\n## Configuration\n\nThe service supports the following variables, either set in the `.env` file, or as environment variables:\n\n* `SUBTRACTOR_SERVICE_PORT` - The port the service listens on. Defaults to `3001`.\n\n## Reference\n\n### `POST /`\n\n_Request parameters_\n\n* `a` : `number` - The number to subtract from\n* `b` : `number` - The number to subtract\n\n_Response properties_\n\n* `result` : `number` - The difference of the two numbers\n",
+      "contentHash": "a6e84bcf3684d0711f723492bd9e81b075e390722063ceafc1bd056e6bfa5e2f",
+      "noWriteIfExists": false
+    },
+    {
+      "filename": "packages/subtractor-service/src/index.ts",
+      "content": "import * as dotenv from \"dotenv\";\n/* Load .env options into process.env */\ndotenv.config();\n\nimport express from \"express\";\n\n/* The port the service will listen on (defaults to 3001) */\nconst PORT = parseInt(process.env.SUBTRACTOR_SERVICE_PORT || \"3001\");\n\n/* Create an Express app */\nconst app = express();\n\n/* Set up middleware to parse JSON request bodies */\napp.use(express.json());\n\n/* Create the micro-service endpoint */\napp.post(\"/\", (req, res) => {\n    // FIXME: Implement the service logic here\n    res.status(500).json({ notImplemented: true });\n});\n\n/* Start the service */\napp.listen(PORT, () => {\n    console.log(`Subtractor Service listening on port ${PORT}`);\n});\n",
+      "contentHash": "2c55408f3ccb709e3cf91d9b184bafceda06b3c8733819cf9350c48e52db6ec0",
+      "noWriteIfExists": true
+    },
+    {
+      "filename": "packages/subtractor-service/tsconfig.json",
+      "content": "{\n    \"compilerOptions\": {\n        \"target\": \"ES2015\",\n        \"module\": \"ES2015\",\n        \"moduleResolution\": \"Node\",\n        \"skipLibCheck\": true,\n        \"allowSyntheticDefaultImports\": true\n    },\n    \"include\": [\"src/**/*.ts\"],\n    \"exclude\": [\"node_modules\"]\n}\n",
+      "contentHash": "0cbef8da916c088c0f9460cf4842270b05801b62ef3f2da6d451cfbc19b0cc7c",
+      "noWriteIfExists": false
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+version: '3.8'
+services:
+    adder:
+        build:
+            dockerfile: dockerfiles/adder-service.dockerfile
+            context: .
+        ports:
+            - "3000:3000"
+        networks:
+            - app
+        init: true
+    subtractor:
+        build:
+            dockerfile: dockerfiles/subtractor-service.dockerfile
+            context: .
+        ports:
+            - "3001:3001"
+        networks:
+            - app
+        init: true
+    multiplier:
+        build:
+            dockerfile: dockerfiles/multiplier-service.dockerfile
+            context: .
+        ports:
+            - "3002:3002"
+        networks:
+            - app
+        init: true
+    divider:
+        build:
+            dockerfile: dockerfiles/divider-service.dockerfile
+            context: .
+        ports:
+            - "3003:3003"
+        networks:
+            - app
+        init: true
+    api-gateway:
+        image: envoyproxy/envoy:v1.31-latest
+        container_name: envoy
+        volumes:
+            - ./envoy.config.yaml:/etc/envoy/envoy.yaml
+        ports:
+            - "4000:4000"
+        command: /usr/local/bin/envoy -c /etc/envoy/envoy.yaml
+        depends_on:
+            - adder
+            - subtractor
+            - multiplier
+            - divider
+        networks:
+            - app
+networks:
+    app: {}

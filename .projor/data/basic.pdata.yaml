@@ -1,0 +1,14 @@
+id: basic
+name: Basic Types
+description: Basic types supported for request and response body parameters.
+schema: BasicType
+objects:
+  - name: number
+    description: Integer or floating-point number.
+    ts: number
+  - name: string
+    description: A sequence of characters.
+    ts: string
+  - name: boolean
+    description: A true or false value.
+    ts: boolean

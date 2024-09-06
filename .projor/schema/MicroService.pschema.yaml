@@ -1,0 +1,17 @@
+id: MicroService
+name: Micro-Service
+description: A single micro-service in our project.
+fields:
+  - name: defaultPort
+    description: The default port this micro-service listens on.
+    type: integer
+  - name: request
+    description: The request body parameters supported by this micro-service.
+    type: attachment
+    references: BodyParameter
+    multiple: true
+  - name: response
+    description: The response body parameters supported by this micro-service.
+    type: attachment
+    references: BodyParameter
+    multiple: true

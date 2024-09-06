@@ -1,0 +1,26 @@
+{
+    "forEach": "micro-services",
+    "filename": "packages/{{kebabCase name}}-service/package.json",
+    "formatUsing": "json"
+}
+---
+{
+    "name": "{{kebabCase name}}-service",
+    "version": "0.0.1",
+    "private": true,
+    "main": "dist/index.js",
+    "scripts": {
+        "build": "esbuild src/index.ts --bundle --minify --platform=node --outfile=dist/index.js",
+        "start": "node dist/index.js"
+    },
+    "dependencies": {
+        "express": "*",
+        "dotenv": "*"
+    },
+    "devDependencies": {
+        "@types/node": "*",
+        "@types/express": "*",
+        "esbuild": "*",
+        "typescript": "*"
+    }
+}

@@ -1,0 +1,17 @@
+{
+    "name": "divider-service-test",
+    "version": "0.0.1",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "start": "mocha src/**/*.test.js"
+    },
+    "dependencies": {
+        "divider-service-client": "*"
+    },
+    "devDependencies": {
+        "@types/mocha": "*",
+        "mocha": "*",
+        "chai": "*"
+    }
+}

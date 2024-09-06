@@ -1,0 +1,21 @@
+{
+    "forEach": "micro-services",
+    "filename": "packages/{{kebabCase name}}-service-test/src/index.test.js",
+    "formatUsing": "babel",
+    "once": true
+}
+---
+import {
+    create{{pascalCase name}}ServiceClient
+} from "{{kebabCase name}}-service-client";
+import { expect } from "chai";
+
+describe('{{capitalCase name}} Service', () => {
+
+    const client = create{{pascalCase name}}ServiceClient(
+        "http://127.0.0.1:{{{defaultPort}}}"
+    );
+
+    // FIXME: Implement tests here
+
+});
