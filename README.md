@@ -6,6 +6,10 @@ _Date_: **September, 2024**
 
 _This readme contains the full text of the article. The entire source code created in the article is available in this repository as well._
 
+# Disclaimer
+
+This article revolves around _technical concepts_, and the possibility of _boilerplate code generation_. After initial reviews, we are fully aware, that the micro-service architecture has _organizational and political reasons_ as well. This article **does not intend to address these reasons**, and focuses solely on the _technical aspects_ of micro-services. Thank you for your understanding.
+
 # Introduction
 
 The micro-service architecture is a common way to design and implement modern software systems. The main idea of micro-services is to not only split up the system into _modules_, but rather into _completely independent processes_, that are communicating with each other _over the network_. It is being used to power many of the most popular web services, such as Netflix, but it does have its own challenges.
