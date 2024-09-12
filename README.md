@@ -1,4 +1,4 @@
-# Perfect Micro Services
+# Perfect Microservices
 
 _Author_: **Botond János Kovács** (`botond.kovacs@siocode.hu`)
 
@@ -8,43 +8,43 @@ _This readme contains the full text of the article. The entire source code creat
 
 # Disclaimer
 
-This article revolves around _technical concepts_, and the possibility of _boilerplate code generation_. After initial reviews, we are fully aware, that the micro-service architecture has _organizational and political reasons_ as well. This article **does not intend to address these reasons**, and focuses solely on the _technical aspects_ of micro-services. Thank you for your understanding.
+This article revolves around _technical concepts_, and the possibility of _boilerplate code generation_. After initial reviews, we are fully aware, that the microservice architecture has _organizational and political reasons_ as well. This article **does not intend to address these reasons**, and focuses solely on the _technical aspects_ of microservices. Thank you for your understanding.
 
 # Introduction
 
-The micro-service architecture is a common way to design and implement modern software systems. The main idea of micro-services is to not only split up the system into _modules_, but rather into _completely independent processes_, that are communicating with each other _over the network_. It is being used to power many of the most popular web services, such as Netflix, but it does have its own challenges.
+The microservice architecture is a common way to design and implement modern software systems. The main idea of microservices is to not only split up the system into _modules_, but rather into _completely independent processes_, that are communicating with each other _over the network_. It is being used to power many of the most popular web services, such as Netflix, but it does have its own challenges.
 
-In this article, I am going to present a way to create applications, that utilize the micro-service architecture. Not only that, but the specific focus of this article is to create **the best micro-service architecture possible**, hence the title of the article.
+In this article, I am going to present a way to create applications, that utilize the microservice architecture. Not only that, but the specific focus of this article is to create **the best microservice architecture possible**, hence the title of the article.
 
-Before diving deep into the technical details, let me first define what I mean when I say _"perfect micro-services"_.
+Before diving deep into the technical details, let me first define what I mean when I say _"perfect microservices"_.
 
-# What makes micro-services perfect?
+# What makes microservices perfect?
 
-As I've previously mentioned, the micro-service architecture comes with its own set of challenges. One thing we have to keep in mind is that software does _not only consist of code_. You may find different definitions of what "software" is, but in my mind software is the sum of _code_, _documentation_, _tests_, _configuration_ and _deployment_. To make our micro-service architecture perfect, we have to address _all of these pieces of the software_.
+As I've previously mentioned, the microservice architecture comes with its own set of challenges. One thing we have to keep in mind is that software does _not only consist of code_. You may find different definitions of what "software" is, but in my mind software is the sum of _code_, _documentation_, _tests_, _configuration_ and _deployment_. To make our microservice architecture perfect, we have to address _all of these pieces of the software_.
 
-* **Code** - We are going to create micro-services using _Node.JS_, and _TypeScript_. More about this part of the stack later.
-* **Documentation** - We are going to use a combination of _OpenAPI_ and _Markdown_ to create documentation for our micro-services.
-* **Tests** - We are going to use the good old _mocha + chai_ combination to write tests for our micro-services.
+* **Code** - We are going to create microservices using _Node.JS_, and _TypeScript_. More about this part of the stack later.
+* **Documentation** - We are going to use a combination of _OpenAPI_ and _Markdown_ to create documentation for our microservices.
+* **Tests** - We are going to use the good old _mocha + chai_ combination to write tests for our microservices.
 * **Configuration** - To parse the config, we will utilize _dotenv_, but we also need to make sure that all of our configuration options are _documented_.
-* **Deployment** - We are going to use _Docker_ to containerize our micro-services, so that they can be easily deployed, for example to _Kubernetes_.
+* **Deployment** - We are going to use _Docker_ to containerize our microservices, so that they can be easily deployed, for example to _Kubernetes_.
 
-To make everything aligned, and achieve _harmony_ between these components, we are also going to add some _secret sauce_ to our project: a **code generator**. We are going to use [**ProJor**](https://siocode.hu/products/pro-jor) to generate as much as the code as possible, so that we can guarantee _single-source-of-truth_, and make sure, that the micro-service nature of our application does _not actually introduce any unnecessary overhead_.
+To make everything aligned, and achieve _harmony_ between these components, we are also going to add some _secret sauce_ to our project: a **code generator**. We are going to use [**ProJor**](https://projor.io) to generate as much as the code as possible, so that we can guarantee _single-source-of-truth_, and make sure, that the microservice nature of our application does _not actually introduce any unnecessary overhead_.
 
 ## More about the stack
 
 Before diving deep into the coding, let me first elaborate on the tech stack, specifically the _code_ and _tests_ part.
 
-In this article, we are creating **HTTP micro-services**; you might also consider **gRPC**, **WebSocket**, **GraphQL** or other protocols, but for the sake of simplicity, we are going to stick with HTTP. We are going to use the _Express_ framework to create our micro-services, and we are going to use _TypeScript_ to write our code.
+In this article, we are creating **HTTP microservices**; you might also consider **gRPC**, **WebSocket**, **GraphQL** or other protocols, but for the sake of simplicity, we are going to stick with HTTP. We are going to use the _Express_ framework to create our microservices, and we are going to use _TypeScript_ to write our code.
 
 We are also going to use the `esbuild` module bundler. A module bundler takes our _JS / TS code_, and spits out a _single merged JS file_, that can be run by Node.JS, without any further dependencies. I like `esbuild`, because it's easy to set up, and it is **lightning fast**.
 
 The way I like laying out larger projects is to use the _monorepo pattern_, where each component we create is a _separate package_, residing in the same _git repository_. This allows common _dependency management_, and easier _full-stack development_. We'll use _npm_ to manage our packages.
 
-In our monorepo, for each micro-service we want to create a few different packages:
+In our monorepo, for each microservice we want to create a few different packages:
 
-* We'll have the _service package_ itself, which contains the actual micro-service implementation code.
-* We'll have the _service client package_, which contains code to _call_ the micro-service.
-* We'll have the _service test package_, which contains the tests for the micro-service. The test package will depend on the client package, so that writing tests is easier, supported by the IDE, and it is type-safe.
+* We'll have the _service package_ itself, which contains the actual microservice implementation code.
+* We'll have the _service client package_, which contains code to _call_ the microservice.
+* We'll have the _service test package_, which contains the tests for the microservice. The test package will depend on the client package, so that writing tests is easier, supported by the IDE, and it is type-safe.
 
 Alright, enough about talking about stuff, let's get to the coding part!
 
@@ -90,15 +90,15 @@ Let's also add a `.gitignore` file to the repository root directory, with the fo
 node_modules/
 ```
 
-Now we are ready to create **the first micro-service**.
+Now we are ready to create **the first microservice**.
 
-# The first micro-service
+# The first microservice
 
-Our first micro-service will be called `adder-service`; when invoking it, we will provide two number parameters (`a` and `b`), and the service will calculate the sum of these numbers.
+Our first microservice will be called `adder-service`; when invoking it, we will provide two number parameters (`a` and `b`), and the service will calculate the sum of these numbers.
 
-One key aspect to keep in mind when designing a micro-service architecture is _request routing_. In this example, our micro-services will be running on _different ports_. Later, we'll create an **API gateway**, that can route requests to the appropriate micro-service based on the request path. Let's use ports in the range `3000-3999` for our micro-services, so the first micro-service will run on port `3000`. All micro-services will serve **exactly one endpoint**, and the endpoint will be the root path `/`. We'll use the `POST` HTTP method with `Content-Type: application/json` for all of our requests.
+One key aspect to keep in mind when designing a microservice architecture is _request routing_. In this example, our microservices will be running on _different ports_. Later, we'll create an **API gateway**, that can route requests to the appropriate microservice based on the request path. Let's use ports in the range `3000-3999` for our microservices, so the first microservice will run on port `3000`. All microservices will serve **exactly one endpoint**, and the endpoint will be the root path `/`. We'll use the `POST` HTTP method with `Content-Type: application/json` for all of our requests.
 
-First, let's create the `packages/` directory. We'll also create another directory inside this one, called `adder-service`. In this directory, we'll create a `package.json` file for the micro-service package, with the following content:
+First, let's create the `packages/` directory. We'll also create another directory inside this one, called `adder-service`. In this directory, we'll create a `package.json` file for the microservice package, with the following content:
 
 ```json
 {
@@ -192,7 +192,7 @@ You might start seeing some red in your IDE, so we will also quickly fix that. T
 
 We can now quickly test if everything works so far:
 
-* Let's build the micro-service first, by running `npm run -w adder-service build` in the repository root directory, or running `npm run build` in the `adder-service` directory.
+* Let's build the microservice first, by running `npm run -w adder-service build` in the repository root directory, or running `npm run build` in the `adder-service` directory.
 
 ```
 npm run -w adder-service build
@@ -206,7 +206,7 @@ npm run -w adder-service build
 Done in 277ms
 ```
 
-* Let's start the micro-service by running `npm run -w adder-service start` in the repository root directory, or running `npm start` in the `adder-service` directory.
+* Let's start the microservice by running `npm run -w adder-service start` in the repository root directory, or running `npm start` in the `adder-service` directory.
 
 ```
 npm run -w adder-service start
@@ -217,7 +217,7 @@ npm run -w adder-service start
 Adder Service listening on port 3000
 ```
 
-* Let's send a request to the micro-service using `curl`:
+* Let's send a request to the microservice using `curl`:
 
 ```bash
 curl -X POST -H "Content-Type: application/json" -d '{"a": 1, "b": 2}' http://localhost:3000
@@ -225,7 +225,7 @@ curl -X POST -H "Content-Type: application/json" -d '{"a": 1, "b": 2}' http://lo
 
 If everything works, we should see the response `{"result":3}`.
 
-Moving on, our next order of business is to create a simple _client library_ for this micro-service, and write a _test_ for it.
+Moving on, our next order of business is to create a simple _client library_ for this microservice, and write a _test_ for it.
 
 ## The first client and test
 
@@ -492,9 +492,9 @@ With that out of the way, it is now time to address _documentation_.
 
 ## Our first documentation
 
-Documentation may be created in various different ways. In this article we are focusing on creating docs for our micro-services using _OpenAPI_, and _Markdown_. The two serve different purposes:
+Documentation may be created in various different ways. In this article we are focusing on creating docs for our microservices using _OpenAPI_, and _Markdown_. The two serve different purposes:
 
-* With _OpenAPI descriptors_, we can expose the functionality of our micro-services to different downstream tools, that support the OpenAPI format. This includes code generators, like client library generators, but also _API documentation tools_, such as _Swagger UI_.
+* With _OpenAPI descriptors_, we can expose the functionality of our microservices to different downstream tools, that support the OpenAPI format. This includes code generators, like client library generators, but also _API documentation tools_, such as _Swagger UI_.
 * With the _Markdown documentation_, we can ensure that the repository can be seamlessly navigated in either the _IDE_, or even straight on _GitHub_. Whenever we open a directory in GitHub, it will try to display the `README.md` file in that directory, if it exists. We are going to "exploit" this, to create a _nice repository browsing experience_.
 
 ### OpenAPI
@@ -611,13 +611,13 @@ If you were to open the `packages/adder-service` directory in GitHub, or preview
 
 Let's take a moment of break, because this has been a lot of information so far. We have:
 
-* Set up our mono-repo, and created the first micro-service.
-* Created a client library for the micro-service.
+* Set up our mono-repo, and created the first microservice.
+* Created a client library for the microservice.
 * Written a test for the client library.
-* Created a Dockerfile for the micro-service.
-* Created OpenAPI and Markdown documentation for the micro-service.
+* Created a Dockerfile for the microservice.
+* Created OpenAPI and Markdown documentation for the microservice.
 
-So far, everything we did resulted in a _high-quality micro-service package_.
+So far, everything we did resulted in a _high-quality microservice package_.
 
 Now the question arises: ***how do we scale this up?***
 
@@ -625,11 +625,11 @@ One approach is to _copy-paste_ the `adder-service` directory, along with the cl
 
 Let's move on to the next part of our journey: _code generation_.
 
-# Templatizing the micro-services
+# Templatizing the microservices
 
-The tool we are going to use to scale up the project is [ProJor](https://siocode.hu/products/pro-jor). ProJor is a _model-based code generator_, and we will have to do two things to make it work:
+The tool we are going to use to scale up the project is [ProJor](https://projor.io). ProJor is a _model-based code generator_, and we will have to do two things to make it work:
 
-* Create a _model_ for our micro-services.
+* Create a _model_ for our microservices.
 * Create _templates_ on top of the model.
 
 Luckily, we can copy-paste most of our already existing code into the templates, and replace moving parts with _placeholders_.
@@ -645,7 +645,7 @@ The diagram below demonstrates the final model we want to achieve.
 ![](images/projor-schema-diagram.png)
 
 * In our model, we will define _Micro-Service objects_.
-* Each micro-service object will have _request_ and _response_ _Body Parameter objects_.
+* Each microservice object will have _request_ and _response_ _Body Parameter objects_.
 * The body parameter objects reference _Basic Type objects_ (e.g. `int`).
 
 All ProJor files must be placed inside the repository root's `.projor/` directory, so let's create that. We'll also create two directories inside the `.projor/` directory for better organization: `schema/` and `data/`.
@@ -701,7 +701,7 @@ fields:
     multiple: true
 ```
 
-With this schema, we have defined that _micro-service objects_ will have:
+With this schema, we have defined that _microservice objects_ will have:
 
 * A `defaultPort` field,
 * A `request` field, which is an _array of body parameter objects_,
@@ -709,7 +709,7 @@ With this schema, we have defined that _micro-service objects_ will have:
 
 Now that we have our schema defined, we can move on to creating the _data_ for our model.
 
-The first step is to define a _data collection_ for our _basic types_, as we will have to reference these types in the micro-service definitions. Let's create the `basic.pdata.yaml` file in the `.projor/data/` directory, with the following content:
+The first step is to define a _data collection_ for our _basic types_, as we will have to reference these types in the microservice definitions. Let's create the `basic.pdata.yaml` file in the `.projor/data/` directory, with the following content:
 
 ```yaml
 id: basic
@@ -730,7 +730,7 @@ objects:
 
 In this data collection, we are defining three basic types: `number`, `string` and `boolean`. We are also providing a TypeScript representation for each of these types.
 
-Let's move on to the final piece of our model: the _micro-services data collection_. Let's create the `micro-services.pdata.yaml` file in the `.projor/data/` directory, with the following content:
+Let's move on to the final piece of our model: the _microservices data collection_. Let's create the `micro-services.pdata.yaml` file in the `.projor/data/` directory, with the following content:
 
 ```yaml
 id: micro-services
@@ -756,16 +756,16 @@ objects:
 
 Let's break this YAML file down ...
 
-* We are defining a single micro-service object, called `adder`.
-* The `adder` micro-service by-default listens on port `3000`.
-* The `adder` micro-service has two request body parameters: `a` and `b`, both of type `number`. In ProJor, we must use the `data-collection-id#object-name` format when referencing objects.
-* The `adder` micro-service has one response body parameter: `result`, of type `number`.
+* We are defining a single microservice object, called `adder`.
+* The `adder` microservice by-default listens on port `3000`.
+* The `adder` microservice has two request body parameters: `a` and `b`, both of type `number`. In ProJor, we must use the `data-collection-id#object-name` format when referencing objects.
+* The `adder` microservice has one response body parameter: `result`, of type `number`.
 
 With the model defined, we can now move on to creating _templates_.
 
 ## Templatizing `package.json` files
 
-We are going to create a template for the `package.json` files of our micro-service packages. In total, we will create the following templates:
+We are going to create a template for the `package.json` files of our microservice packages. In total, we will create the following templates:
 
 * Template for the _service package `package.json` file_,
 * Template for the _service client package `package.json` file_,
@@ -807,9 +807,9 @@ Time for a quick explanation:
 * Each `.ptemplate.mustache` file begins with a special _frontmatter_ section, which contains the _metadata_ of the template.
 * In this specific template, we are using the `forEach` operator: this operator creates a _separate file_ for _each object defined in the referenced data collection_, which is the `micro-services` data collection in this case.
 * Under the `---` part, we can write the actual template content, using the _Mustache templating language_.
-* There are two things we are templatizing for our micro-services:
-    * The _filename_ of the generated `package.json` file, which is based on the name of the micro-service.
-    * The _name_ field of the `package.json` file, which is also based on the name of the micro-service.
+* There are two things we are templatizing for our microservices:
+    * The _filename_ of the generated `package.json` file, which is based on the name of the microservice.
+    * The _name_ field of the `package.json` file, which is also based on the name of the microservice.
 
 Before moving on, let's see if we did everything correctly. To generate code from our model and templates, we should execute the `projor generate` command. It should produce the following output:
 
@@ -821,9 +821,9 @@ projor generate
 ✅ ProJor done
 ```
 
-The changes to our project are not immediately apparent, because we are essentially generating the _exact same content_ as we had before. If we were to define a new micro-service object however, we should see a new package directory, and its generated `package.json` file in the repository. Let's do that now.
+The changes to our project are not immediately apparent, because we are essentially generating the _exact same content_ as we had before. If we were to define a new microservice object however, we should see a new package directory, and its generated `package.json` file in the repository. Let's do that now.
 
-Let's edit the `micro-services.pdata.yaml` file in the `.projor/data/` directory, and add a new micro-service object to it:
+Let's edit the `micro-services.pdata.yaml` file in the `.projor/data/` directory, and add a new microservice object to it:
 
 ```yaml
 id: micro-services
@@ -935,7 +935,7 @@ projor generate
 
 ## Templatizing service entrypoints
 
-Our next order of business is to create templates for the entrypoints of our micro-services.
+Our next order of business is to create templates for the entrypoints of our microservices.
 
 One key takeaway here, is that in case of these `index.ts` files, **we do not want the code generator to always overwrite them**. Instead, we want to _generate them only if they do not exist yet_. For this purpose, we are going to annotate the entrypoint template with `"once": true` in its frontmatter section.
 
@@ -1000,17 +1000,17 @@ We can continue our journey by generating all remaining boilerplate code for our
 
 In total, we will create the following templates:
 
-* `tsconfig.json` file template for micro-services,
-* `README.md` file template for micro-services,
-* `openapi.yaml` file template for micro-services,
-* `Dockerfile` template for micro-services,
+* `tsconfig.json` file template for microservices,
+* `README.md` file template for microservices,
+* `openapi.yaml` file template for microservices,
+* `Dockerfile` template for microservices,
 * `index.ts` file template for client libraries,
 * `tsconfig.json` file template for client libraries,
 * `index.test.js` file template for test packages (which will be generated only once)
 
 For these templates, I will not add much commentary, as we are doing just the same things, that have already been introduced before.
 
-_Template for the `tsconfig.json` file of micro-services (`service-tsconfig-json.ptemplate.mustache`)_:
+_Template for the `tsconfig.json` file of microservices (`service-tsconfig-json.ptemplate.mustache`)_:
 
 ```
 {
@@ -1036,7 +1036,7 @@ _Template for the `tsconfig.json` file of micro-services (`service-tsconfig-json
 }
 ```
 
-_Template for the `README.md` file of micro-services (`service-readme-md.ptemplate.mustache`)_:
+_Template for the `README.md` file of microservices (`service-readme-md.ptemplate.mustache`)_:
 
 `````
 {
@@ -1087,7 +1087,7 @@ _Response properties_
 {{/each}}
 `````
 
-_Template for the `openapi.yaml` file of micro-services (`service-openapi-yaml.ptemplate.mustache`)_:
+_Template for the `openapi.yaml` file of microservices (`service-openapi-yaml.ptemplate.mustache`)_:
 
 ```
 {
@@ -1149,7 +1149,7 @@ paths:
                     description: Error message explaining why the input was invalid
 ```
 
-_Template for the `Dockerfile` file of micro-services (`service-dockerfile.ptemplate.mustache`)_:
+_Template for the `Dockerfile` file of microservices (`service-dockerfile.ptemplate.mustache`)_:
 
 ```
 {
@@ -1308,7 +1308,7 @@ describe('{{capitalCase name}} Service', () => {
 });
 ```
 
-Whoosh, that was a long run, but trust me, it was worth it! Let's run `projor generate` to render all of these templates for our micro-services.
+Whoosh, that was a long run, but trust me, it was worth it! Let's run `projor generate` to render all of these templates for our microservices.
 
 ```
 projor generate
@@ -1422,11 +1422,11 @@ npm run -w subtractor-service-test start
 
 ## What we have achieved
 
-Because we have templatized all of our boilerplate code, whenever we extend the `micro-services.pdata.yaml` file, we are generating _all of the boilerplate code_ associated with the service package, its client package, and its tests. This is a _huge time saver_, and it ensures that all of our micro-services are _consistent_ in terms of their structure.
+Because we have templatized all of our boilerplate code, whenever we extend the `micro-services.pdata.yaml` file, we are generating _all of the boilerplate code_ associated with the service package, its client package, and its tests. This is a _huge time saver_, and it ensures that all of our microservices are _consistent_ in terms of their structure.
 
 ## Scaling up even more
 
-We have now created two micro-services, and we have a _scalable way_ to create more. Let's add a few new micro-services to our `micro-services.pdata.yaml` file, namely the `multiplier` and `divider` services.
+We have now created two microservices, and we have a _scalable way_ to create more. Let's add a few new microservices to our `micro-services.pdata.yaml` file, namely the `multiplier` and `divider` services.
 
 ```yaml
   - name: multiplier
@@ -1624,7 +1624,7 @@ Now, we will focus on some improvements to our project. We will:
 
 * Make a better _developer experience_, by also generating the _root `package.json` file_. This way, we can generate _single command build scripts_ for convenience.
 * Add a `.gitignore` file to all packages, so that _build artifacts are excluded from version control_.
-* Implement an _API gateway_, using _envoy_ that will _route requests to the correct micro-service_ based on the path.
+* Implement an _API gateway_, using _envoy_ that will _route requests to the correct microservice_ based on the path.
 * Use _Docker Compose_ to _orchestrate the services_ in the development environment.
 
 ## Generating the root `package.json` file
@@ -1823,7 +1823,7 @@ perfect-micro-services-divider-1     | Divider Service listening on port 3003
 
 ## Implementing an API gateway
 
-The _envoy proxy_ is an open-source _proxy application_, that can be configured via a _YAML file_. In this YAML file, we will set up _upstream services_ (our micro-services), and _route requests_ to the correct service based on the path. We want to use the `/service-name` path convention to route requests to the correct service. We'll also make envoy listen on `TCP 4000` port, so for example to invoke the `adder` service, we would send a request to `http://localhost:4000/adder`.
+The _envoy proxy_ is an open-source _proxy application_, that can be configured via a _YAML file_. In this YAML file, we will set up _upstream services_ (our microservices), and _route requests_ to the correct service based on the path. We want to use the `/service-name` path convention to route requests to the correct service. We'll also make envoy listen on `TCP 4000` port, so for example to invoke the `adder` service, we would send a request to `http://localhost:4000/adder`.
 
 To get started, we need an _envoy proxy config YAML file_. We will also generate this via the code generator, since it depends on the services we have defined. Let's create a new template, called `envoy-config-yaml.ptemplate.mustache` in the `.projor/template` directory, with the following content:
 
@@ -1949,6 +1949,6 @@ I used Postman for testing, this is how the request looks like:
 
 # Conclusion
 
-In this article, we have created a _scalable micro-service architecture_. Whenever we extend our list of services, all necessary boilerplate is generated, and all moving parts, such as the `docker-compose.yaml` file are updated automatically. This means, that our project can be maintained with **zero development overhead**, because we **only have to write the business logic** for the services.
+In this article, we have created a _scalable microservice architecture_. Whenever we extend our list of services, all necessary boilerplate is generated, and all moving parts, such as the `docker-compose.yaml` file are updated automatically. This means, that our project can be maintained with **zero development overhead**, because we **only have to write the business logic** for the services.
 
-Happy micro-service development! 🚀
+Happy microservice development! 🚀
